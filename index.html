@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="SAFE-DiT: Semantics-Aware Fast-path Execution for High-Resolution Diffusion Transformers."
+    >
+    <title>SAFE-DiT</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-nav" aria-label="Primary navigation">
+      <a class="brand" href="#top">SAFE-DiT</a>
+      <nav>
+        <a href="#overview">Overview</a>
+        <a href="#method">Method</a>
+        <a href="#results">Results</a>
+        <a href="#appendix">Appendix</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#citation">BibTeX</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="title">
+        <div class="hero-media" role="img" aria-label="SAFE-DiT method and result overview"></div>
+        <div class="hero-shade"></div>
+        <div class="hero-content">
+          <p class="eyebrow">High-resolution diffusion transformer inference</p>
+          <h1 id="title">SAFE-DiT</h1>
+          <p class="subtitle">
+            Semantics-Aware Fast-path Execution for High-Resolution Diffusion Transformers
+          </p>
+          <p class="authors">Xuanhua Yin, Yuxuan Jia, Chuanzhi Xu, Weidong Cai</p>
+          <p class="affiliation">School of Computer Science, The University of Sydney</p>
+          <div class="button-row" aria-label="Project links">
+            <a class="button primary" href="https://arxiv.org/abs/2606.29360">Paper</a>
+            <a class="button" href="https://arxiv.org/pdf/2606.29360">PDF</a>
+            <a class="button" href="https://github.com/xuanhuayin/SAFE-DiT">Code</a>
+            <a class="button" href="#citation">BibTeX</a>
+          </div>
+          <div class="tag-row" aria-label="Key properties">
+            <span>Training-free</span>
+            <span>Exact mask elision</span>
+            <span>Mask-free scheduling</span>
+            <span>Human non-inferiority study</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="insights" aria-label="Key findings">
+        <article>
+          <strong>4.1x to 5.8x</strong>
+          <span>Slower long-sequence attention when redundant masks move SDPA away from the mask-free path.</span>
+        </article>
+        <article>
+          <strong>5.09x</strong>
+          <span>End-to-end Lumina-Next acceleration at 2560<sup>2</sup>, with memory reduced from 94.1 to 27.9 GB.</span>
+        </article>
+        <article>
+          <strong>3072<sup>2</sup></strong>
+          <span>SAFE-DiT runs at 3072<sup>2</sup> where dense inference runs out of memory.</span>
+        </article>
+      </section>
+
+      <section id="overview" class="section intro-section">
+        <div class="section-copy">
+          <p class="section-kicker">Overview</p>
+          <h2>Separate the exact systems rewrite from approximate spatial scheduling.</h2>
+          <p>
+            SAFE-DiT targets a systems bottleneck in high-resolution Diffusion Transformers:
+            spatially adaptive code often represents routing decisions as attention masks, even when
+            those masks are mathematically redundant. Such masks can change PyTorch SDPA dispatch
+            and erase the intended speedup.
+          </p>
+          <p>
+            The method removes only provenance-certified image self-attention masks that induce a
+            row-wise constant shift in attention logits. Semantics-bearing masks, including text
+            padding masks, are retained. Spatial adaptation is then expressed through prompt-conditioned
+            token partitioning, selective state updates, context anchor refresh, and spatial guidance.
+          </p>
+        </div>
+        <figure class="figure-frame">
+          <img src="assets/pipeline.png" alt="SAFE-DiT pipeline">
+          <figcaption>
+            SAFE-DiT warms up to build a sensitivity map, refreshes all tokens at anchor steps,
+            and updates sensitive rows while reusing context rows at non-anchor steps.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section id="method" class="section method-section">
+        <div class="section-heading">
+          <p class="section-kicker">Method</p>
+          <h2>Four pieces, one clear claim boundary.</h2>
+        </div>
+        <div class="method-grid">
+          <article>
+            <span class="method-index">01</span>
+            <h3>Certified Mask Elision</h3>
+            <p>
+              SAFE-SDPA removes a mask only when every query row adds a finite constant to
+              all key logits. All-valid image self-attention masks qualify; padding, causal,
+              block, and non-uniform bias masks do not.
+            </p>
+          </article>
+          <article>
+            <span class="method-index">02</span>
+            <h3>Prompt-Conditioned Sensitivity</h3>
+            <p>
+              Early image-to-text attention responses identify prompt-sensitive regions.
+              The partition is fixed after warm-up, avoiding repeated routing overhead.
+            </p>
+          </article>
+          <article>
+            <span class="method-index">03</span>
+            <h3>Selective State Update</h3>
+            <p>
+              SRSU computes sensitive query rows while retaining global keys and values.
+              Context rows are cached and periodically refreshed by CAR to limit drift.
+            </p>
+          </article>
+          <article>
+            <span class="method-index">04</span>
+            <h3>Spatial Guidance</h3>
+            <p>
+              SW-CFG reuses the sensitivity field to adjust prediction-level guidance.
+              It changes prompt alignment behavior without reintroducing spatial self-attention masks.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="results" class="section results-section">
+        <div class="section-heading">
+          <p class="section-kicker">Results</p>
+          <h2>Acceleration grows with resolution and follows the mask boundary.</h2>
+        </div>
+
+        <div class="result-panels">
+          <figure class="wide-figure">
+            <img src="assets/highres_frontier.png" alt="High-resolution speed and memory frontier">
+            <figcaption>
+              SAFE-DiT widens the speed-memory frontier from 1024<sup>2</sup> to 3072<sup>2</sup>.
+            </figcaption>
+          </figure>
+          <figure class="wide-figure">
+            <img src="assets/midt_tax.png" alt="Mask-induced dispatch tax across sequence lengths">
+            <figcaption>
+              Redundant masks change SDPA dispatch and become increasingly expensive at long sequence lengths.
+            </figcaption>
+          </figure>
+        </div>
+
+        <div class="metrics-table" role="table" aria-label="Main SAFE-DiT metrics">
+          <div role="row" class="table-head">
+            <span role="columnheader">Setting</span>
+            <span role="columnheader">Latency</span>
+            <span role="columnheader">Memory</span>
+            <span role="columnheader">Outcome</span>
+          </div>
+          <div role="row">
+            <span role="cell">1024<sup>2</sup> Lumina-Next</span>
+            <span role="cell">2.69x</span>
+            <span role="cell">11.3 to 11.7 GB</span>
+            <span role="cell">Matched prompt and seed quality</span>
+          </div>
+          <div role="row">
+            <span role="cell">2560<sup>2</sup> Lumina-Next</span>
+            <span role="cell">5.09x</span>
+            <span role="cell">94.1 to 27.9 GB</span>
+            <span role="cell">Dense+FP plus scheduling gain</span>
+          </div>
+          <div role="row">
+            <span role="cell">3072<sup>2</sup> Stress</span>
+            <span role="cell">OOM to runs</span>
+            <span role="cell">36.2 GB</span>
+            <span role="cell">Dense inference runs out of memory</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section evidence-section">
+        <div class="section-copy">
+          <p class="section-kicker">Evidence</p>
+          <h2>Quality is checked with paired metrics, ablations, VLM checks, and a blinded human study.</h2>
+          <p>
+            SAFE-Core isolates acceleration fidelity from guidance changes. A blinded human study
+            finds no prompt-level loss against Dense+FP on visual quality and satisfies the 5 percent
+            non-inferiority criterion. SAFE-DiT+SW is reported separately as a prompt-alignment
+            operating point.
+          </p>
+        </div>
+        <div class="evidence-grid">
+          <figure>
+            <img src="assets/crossbackbone.png" alt="Cross-backbone SAFE-DiT speedup">
+            <figcaption>Cross-backbone speedup follows whether the backbone triggers MIDT.</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/ablation.png" alt="SAFE-DiT module ablations">
+            <figcaption>Module ablations separate exact mask elision, scheduling, drift control, and guidance.</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/vlm_quality.png" alt="VLM win tie loss quality judgments">
+            <figcaption>VLM checks are auxiliary; paired metrics and the human study support the fidelity claim.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section id="appendix" class="section appendix-section">
+        <div class="section-heading">
+          <p class="section-kicker">Appendix Visuals</p>
+          <h2>Additional diagnostics from the supplement.</h2>
+        </div>
+        <div class="appendix-grid">
+          <figure>
+            <img src="assets/pareto.png" alt="SAFE-DiT speed and quality Pareto plot">
+            <figcaption>Speed and quality Pareto on Lumina-Next.</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/pcsp.png" alt="Prompt-conditioned sensitivity partition visualization">
+            <figcaption>PCSP sensitivity maps show where prompt-conditioned updates concentrate.</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/car_drift.png" alt="Context anchor refresh drift visualization">
+            <figcaption>CAR limits context-state drift over denoising steps.</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/crossbackbone.png" alt="Cross-backbone SAFE-DiT speedup">
+            <figcaption>Cross-backbone results separate MIDT-driven and scheduling-only speedups.</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/ablation.png" alt="SAFE-DiT ablation plot">
+            <figcaption>Component ablations identify the roles of fast-path rewrite, SRSU, CAR, PCSP, and SW-CFG.</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/vlm_quality.png" alt="VLM win tie loss quality judgments">
+            <figcaption>Blind VLM checks provide auxiliary win, tie, and loss evidence.</figcaption>
+          </figure>
+          <figure class="span-wide">
+            <img src="assets/baseline_grid.png" alt="Supplementary paired qualitative baseline comparison grid">
+            <figcaption>
+              Supplementary paired baseline grid with matched prompts and seeds.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section id="gallery" class="section gallery-section">
+        <div class="section-heading">
+          <p class="section-kicker">Qualitative Comparisons</p>
+          <h2>Matched prompt and seed examples.</h2>
+        </div>
+        <figure class="gallery-figure">
+          <img src="assets/qualitative_generation.png" alt="SAFE-DiT qualitative generation comparisons">
+          <figcaption>
+            Paired 2048<sup>2</sup> examples show SAFE-DiT improving local detail while keeping the composition close to Dense.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section id="code" class="section code-section">
+        <div class="section-heading">
+          <p class="section-kicker">Run</p>
+          <h2>Clone the repository and run the public generation adapter.</h2>
+        </div>
+        <div class="code-grid">
+          <pre><code>git clone https://github.com/xuanhuayin/SAFE-DiT.git
+cd SAFE-DiT
+python -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt</code></pre>
+          <pre><code>python -m safe_dit.generate_pixart \
+  --mode safe \
+  --prompt "a glass greenhouse on a snowy mountain" \
+  --output outputs/pixart_safe.png \
+  --height 1024 --width 1024 --steps 20</code></pre>
+        </div>
+      </section>
+
+      <section id="citation" class="section citation-section">
+        <div class="section-heading">
+          <p class="section-kicker">Citation</p>
+          <h2>If SAFE-DiT helps your work, please cite it.</h2>
+        </div>
+        <pre class="bibtex"><code>@article{yin2026safedit,
+  title={SAFE-DiT: Semantics-Aware Fast-path Execution for High-Resolution Diffusion Transformers},
+  author={Yin, Xuanhua and Jia, Yuxuan and Xu, Chuanzhi and Cai, Weidong},
+  journal={arXiv preprint arXiv:2606.29360},
+  year={2026},
+  doi={10.48550/arXiv.2606.29360},
+  url={https://arxiv.org/abs/2606.29360}
+}</code></pre>
+      </section>
+    </main>
+
+    <footer>
+      <span>SAFE-DiT</span>
+      <a href="https://arxiv.org/abs/2606.29360">arXiv:2606.29360</a>
+      <a href="https://github.com/xuanhuayin/SAFE-DiT">GitHub</a>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
