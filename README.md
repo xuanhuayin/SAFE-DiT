@@ -6,7 +6,7 @@
 
 **A runnable implementation of SAFE-DiT, including exact mask elision, prompt-sensitive spatial scheduling, spatial guidance, MIDT benchmarking, and public PixArt-Sigma generation.**
 
-[arXiv](https://arxiv.org/abs/2606.29360) | [PDF](https://arxiv.org/pdf/2606.29360) | [DOI](https://doi.org/10.48550/arXiv.2606.29360) | [Installation](#installation) | [Quick Start](#quick-start) | [Citation](#citation)
+[Project Page](https://xuanhuayin.github.io/SAFE-DiT/) | [arXiv](https://arxiv.org/abs/2606.29360) | [PDF](https://arxiv.org/pdf/2606.29360) | [DOI](https://doi.org/10.48550/arXiv.2606.29360) | [Installation](#installation) | [Quick Start](#quick-start) | [Citation](#citation)
 
 </div>
 
