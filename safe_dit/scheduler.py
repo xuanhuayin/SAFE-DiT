@@ -18,9 +18,12 @@ class SAFEConfig:
 
     keep_ratio: float = 0.5
     anchor_interval: int = 2
+    mask_step: int = 5
+    skip_interval: int = 2
     cfg_scale: float = 4.0
     cfg_sensitive: float = 7.0
     cfg_context: float = 1.0
+    sw_cfg: bool = True
     eps: float = 1e-6
 
     def __post_init__(self) -> None:
@@ -28,6 +31,12 @@ class SAFEConfig:
             raise ValueError("keep_ratio must be in (0, 1]")
         if self.anchor_interval < 1:
             raise ValueError("anchor_interval must be >= 1")
+        if self.mask_step < 0:
+            raise ValueError("mask_step must be >= 0")
+        if self.skip_interval < 0:
+            raise ValueError("skip_interval must be >= 0")
+        if self.cfg_sensitive < 0.0 or self.cfg_context < 0.0:
+            raise ValueError("guidance scales must be non-negative")
 
 
 def prompt_conditioned_sensitivity(
@@ -91,6 +100,33 @@ def context_anchor_refresh(step: int, anchor_interval: int) -> bool:
     return step % anchor_interval == 0
 
 
+def should_compute_dense_step(
+    step: int,
+    total_steps: int,
+    mask_step: int,
+    skip_interval: int,
+    anchor_interval: int,
+    tail_dense_steps: int = 2,
+) -> bool:
+    """Return whether a denoising step should perform a dense refresh.
+
+    The public diffusers adapters use this schedule when a backbone does not
+    expose row-level query execution. Before the sensitivity map is committed,
+    all steps are dense. Afterward, anchor steps and the final denoising steps
+    stay dense to reduce drift.
+    """
+
+    if step < mask_step:
+        return True
+    if step >= max(0, total_steps - tail_dense_steps):
+        return True
+    if skip_interval <= 0:
+        return True
+    if context_anchor_refresh(step - mask_step, anchor_interval):
+        return True
+    return (step - mask_step) % (skip_interval + 1) == 0
+
+
 def srsu_update(
     previous_state: torch.Tensor,
     dense_candidate: torch.Tensor,
@@ -114,6 +150,16 @@ def srsu_update(
     return torch.where(mask, dense_candidate, previous_state)
 
 
+def first_order_extrapolate(history: Tuple[torch.Tensor, ...]) -> torch.Tensor:
+    """Predict the next state from the two most recent computed states."""
+
+    if len(history) == 0:
+        raise ValueError("history must contain at least one tensor")
+    if len(history) == 1:
+        return history[-1]
+    return history[-1] + (history[-1] - history[-2])
+
+
 def sensitivity_weighted_cfg(
     unconditional: torch.Tensor,
     conditional: torch.Tensor,
@@ -133,4 +179,28 @@ def sensitivity_weighted_cfg(
 
     scale = cfg_context + sensitivity * (cfg_sensitive - cfg_context)
     guided = unconditional + scale.unsqueeze(-1) * (conditional - unconditional)
+    return guided, scale
+
+
+def sensitivity_weighted_cfg_image(
+    unconditional: torch.Tensor,
+    conditional: torch.Tensor,
+    sensitivity_map: torch.Tensor,
+    cfg_context: float,
+    cfg_sensitive: float,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Spatially varying CFG for image-like tensors.
+
+    Parameters use `[batch, channels, height, width]` predictions and a
+    `[batch, 1, height, width]` sensitivity map.
+    """
+
+    if unconditional.shape != conditional.shape:
+        raise ValueError("unconditional and conditional predictions must have the same shape")
+    if sensitivity_map.ndim != 4 or sensitivity_map.shape[1] != 1:
+        raise ValueError("sensitivity_map must have shape [batch, 1, height, width]")
+    if sensitivity_map.shape[0] != unconditional.shape[0] or sensitivity_map.shape[-2:] != unconditional.shape[-2:]:
+        raise ValueError("sensitivity_map spatial dimensions must match the predictions")
+    scale = cfg_context + sensitivity_map * (cfg_sensitive - cfg_context)
+    guided = unconditional + scale * (conditional - unconditional)
     return guided, scale

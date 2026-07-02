@@ -6,7 +6,7 @@ import argparse
 import json
 import time
 from pathlib import Path
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Optional
 
 import torch
 import torch.nn.functional as F
@@ -40,6 +40,38 @@ def time_ms(fn: Callable[[], torch.Tensor], device: torch.device, warmup: int, r
     return (time.perf_counter() - start) * 1000.0 / reps
 
 
+def profiler_kernels(fn: Callable[[], torch.Tensor], device: torch.device) -> Optional[List[Dict[str, object]]]:
+    """Return attention-related profiler rows for a single call."""
+
+    if device.type != "cuda":
+        return None
+    try:
+        from torch.profiler import ProfilerActivity, profile
+    except Exception:
+        return None
+
+    fn()
+    synchronize(device)
+    with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=False) as prof:
+        fn()
+        synchronize(device)
+    tokens = ("flash", "efficient", "sdpa", "attention", "cutlass", "triton", "scaled_dot", "bmm", "softmax")
+    rows: List[Dict[str, object]] = []
+    for event in prof.key_averages():
+        key = event.key
+        if any(token in key.lower() for token in tokens):
+            rows.append(
+                {
+                    "name": key,
+                    "calls": int(event.count),
+                    "cpu_time_total_us": float(event.cpu_time_total),
+                    "cuda_time_total_us": float(getattr(event, "cuda_time_total", 0.0)),
+                }
+            )
+    rows.sort(key=lambda item: float(item["cuda_time_total_us"]), reverse=True)
+    return rows[:30]
+
+
 def benchmark_case(
     batch: int,
     heads: int,
@@ -49,7 +81,8 @@ def benchmark_case(
     device: torch.device,
     warmup: int,
     reps: int,
-) -> Dict[str, float]:
+    profile_kernels: bool = False,
+) -> Dict[str, object]:
     shape = (batch, heads, seq_len, head_dim)
     query = torch.randn(shape, device=device, dtype=dtype)
     key = torch.randn(shape, device=device, dtype=dtype)
@@ -79,7 +112,7 @@ def benchmark_case(
     else:
         mask_peak_gb = 0.0
 
-    return {
+    record: Dict[str, object] = {
         "batch": batch,
         "heads": heads,
         "seq_len": seq_len,
@@ -90,6 +123,10 @@ def benchmark_case(
         "no_mask_peak_gb": no_mask_peak_gb,
         "all_valid_mask_peak_gb": mask_peak_gb,
     }
+    if profile_kernels:
+        record["no_mask_kernels"] = profiler_kernels(no_mask, device)
+        record["all_valid_mask_kernels"] = profiler_kernels(with_mask, device)
+    return record
 
 
 def environment_record(device: torch.device, dtype: torch.dtype) -> Dict[str, object]:
@@ -123,6 +160,7 @@ def main() -> None:
     parser.add_argument("--warmup", type=int, default=5)
     parser.add_argument("--reps", type=int, default=20)
     parser.add_argument("--out-json", default=None)
+    parser.add_argument("--profile-kernels", action="store_true")
     args = parser.parse_args()
 
     device = resolve_device(args.device)
@@ -143,6 +181,7 @@ def main() -> None:
                 device=device,
                 warmup=args.warmup,
                 reps=args.reps,
+                profile_kernels=args.profile_kernels,
             )
             results["cases"].append(case)
             print(json.dumps(case, sort_keys=True))
@@ -155,4 +194,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

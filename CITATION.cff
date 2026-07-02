@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use SAFE-DiT, please cite the arXiv paper."
+title: "SAFE-DiT: Semantics-Aware Fast-path Execution for High-Resolution Diffusion Transformers"
+authors:
+  - family-names: Yin
+    given-names: Xuanhua
+  - family-names: Jia
+    given-names: Yuxuan
+  - family-names: Xu
+    given-names: Chuanzhi
+  - family-names: Cai
+    given-names: Weidong
+date-released: "2026-06-28"
+doi: "10.48550/arXiv.2606.29360"
+url: "https://arxiv.org/abs/2606.29360"
+repository-code: "https://github.com/xuanhuayin/SAFE-DiT"
+preferred-citation:
+  type: article
+  title: "SAFE-DiT: Semantics-Aware Fast-path Execution for High-Resolution Diffusion Transformers"
+  authors:
+    - family-names: Yin
+      given-names: Xuanhua
+    - family-names: Jia
+      given-names: Yuxuan
+    - family-names: Xu
+      given-names: Chuanzhi
+    - family-names: Cai
+      given-names: Weidong
+  year: 2026
+  journal: "arXiv preprint arXiv:2606.29360"
+  doi: "10.48550/arXiv.2606.29360"
+  url: "https://arxiv.org/abs/2606.29360"
