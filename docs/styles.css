@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap");
-
 :root {
   --ink: #141817;
   --muted: #626b68;
@@ -26,7 +24,7 @@ body {
   margin: 0;
   color: var(--ink);
   background: var(--paper);
-  font-family: "Manrope", "Aptos", "Calibri", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Aptos", "Calibri", "Segoe UI", "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
   line-height: 1.62;
 }
 
@@ -468,7 +466,7 @@ pre {
 }
 
 code {
-  font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 .citation-section {
