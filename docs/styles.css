@@ -1,15 +1,17 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap");
+
 :root {
-  --ink: #171717;
-  --muted: #5f6368;
-  --paper: #f7f4ec;
+  --ink: #141817;
+  --muted: #626b68;
+  --paper: #f4f5f1;
   --surface: #ffffff;
-  --line: #ded8cd;
-  --teal: #0f766e;
-  --teal-dark: #114f4b;
-  --coral: #bd4b35;
-  --amber: #c78722;
-  --blue: #345995;
-  --shadow: 0 18px 55px rgba(20, 24, 28, 0.16);
+  --line: #dfe5df;
+  --teal: #0c766d;
+  --teal-dark: #0c4744;
+  --coral: #b84f3d;
+  --amber: #b67d25;
+  --blue: #315c91;
+  --shadow: 0 18px 48px rgba(26, 34, 34, 0.13);
 }
 
 * {
@@ -24,7 +26,7 @@ body {
   margin: 0;
   color: var(--ink);
   background: var(--paper);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Manrope", "Aptos", "Calibri", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
   line-height: 1.62;
 }
 
@@ -49,7 +51,7 @@ img {
   gap: 24px;
   padding: 14px clamp(18px, 4vw, 54px);
   color: #fff;
-  background: rgba(15, 18, 20, 0.45);
+  background: rgba(11, 18, 18, 0.58);
   border-bottom: 1px solid rgba(255, 255, 255, 0.16);
   backdrop-filter: blur(18px);
 }
@@ -79,7 +81,7 @@ img {
 
 .hero {
   position: relative;
-  min-height: 92svh;
+  min-height: 88svh;
   display: grid;
   align-items: end;
   overflow: hidden;
@@ -94,17 +96,17 @@ img {
 }
 
 .hero-media {
-  background-image: url("assets/teaser.png");
+  background-image: url("assets/hero_board.png");
   background-size: cover;
   background-position: center;
-  transform: scale(1.02);
-  filter: saturate(1.05) contrast(1.03);
+  transform: scale(1.01);
+  filter: saturate(0.98) contrast(1.01);
 }
 
 .hero-shade {
   background:
-    linear-gradient(180deg, rgba(9, 12, 14, 0.24) 0%, rgba(9, 12, 14, 0.62) 54%, rgba(9, 12, 14, 0.92) 100%),
-    linear-gradient(90deg, rgba(16, 74, 70, 0.64), rgba(31, 30, 24, 0.15) 55%, rgba(189, 75, 53, 0.42));
+    linear-gradient(180deg, rgba(7, 13, 14, 0.08) 0%, rgba(7, 13, 14, 0.28) 52%, rgba(7, 13, 14, 0.76) 100%),
+    linear-gradient(90deg, rgba(8, 51, 50, 0.78) 0%, rgba(8, 51, 50, 0.43) 36%, rgba(8, 51, 50, 0.08) 72%);
 }
 
 .hero-content {
@@ -112,7 +114,7 @@ img {
   z-index: 2;
   width: min(1160px, calc(100% - 36px));
   margin: 0 auto;
-  padding: 104px 0 74px;
+  padding: 118px 0 72px;
 }
 
 .eyebrow,
@@ -137,18 +139,19 @@ p {
 }
 
 h1 {
-  margin-bottom: 8px;
-  font-size: clamp(4.8rem, 13vw, 11rem);
-  line-height: 0.9;
+  margin-bottom: 12px;
+  font-size: clamp(4.7rem, 12vw, 10rem);
+  line-height: 0.88;
   letter-spacing: 0;
+  font-weight: 800;
 }
 
 .subtitle {
-  max-width: 980px;
+  max-width: 900px;
   margin-bottom: 20px;
-  font-size: clamp(1.25rem, 2.7vw, 2.35rem);
-  font-weight: 760;
-  line-height: 1.12;
+  font-size: clamp(1.18rem, 2.4vw, 2.15rem);
+  font-weight: 700;
+  line-height: 1.16;
 }
 
 .authors,
@@ -180,7 +183,7 @@ h1 {
   font-weight: 800;
   text-decoration: none;
   border: 1px solid rgba(255, 255, 255, 0.44);
-  border-radius: 999px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.09);
   backdrop-filter: blur(10px);
 }
@@ -201,7 +204,7 @@ h1 {
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.86rem;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 999px;
+  border-radius: 8px;
   background: rgba(0, 0, 0, 0.18);
 }
 
@@ -225,6 +228,7 @@ h1 {
   color: var(--teal-dark);
   font-size: clamp(2.1rem, 5vw, 4.1rem);
   line-height: 1;
+  letter-spacing: 0;
 }
 
 .insights span {
@@ -257,6 +261,7 @@ h1 {
   font-size: clamp(2rem, 4vw, 4rem);
   line-height: 1.02;
   letter-spacing: 0;
+  font-weight: 800;
 }
 
 .section-copy p:not(.section-kicker) {
@@ -292,7 +297,8 @@ figcaption {
 }
 
 .method-section,
-.gallery-section {
+.gallery-section,
+.appendix-section {
   background: #fff;
 }
 
@@ -403,6 +409,31 @@ figcaption {
   gap: 18px;
 }
 
+.appendix-grid {
+  display: grid;
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.appendix-grid figure {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.appendix-grid .span-wide {
+  grid-column: 1 / -1;
+}
+
+.appendix-grid .span-wide img {
+  width: 100%;
+}
+
 .evidence-grid figure {
   box-shadow: none;
   background: #fff;
@@ -437,7 +468,7 @@ pre {
 }
 
 code {
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 .citation-section {
@@ -480,6 +511,7 @@ footer a {
   .section-copy,
   .method-grid,
   .evidence-grid,
+  .appendix-grid,
   .code-grid,
   .insights {
     grid-template-columns: 1fr;
